@@ -13,6 +13,18 @@ config_version=4
 config/name="DebugDraw"
 config/icon="res://icon.png"
 
+[autoload]
+
+Gizmo="*res://addons/DebugDraw/Gizmo.gd"
+
+[debug]
+
+gdscript/warnings/enable=false
+
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/DebugDraw/plugin.cfg" )
+
 [gui]
 
 common/drop_mouse_on_gui_input_disabled=true

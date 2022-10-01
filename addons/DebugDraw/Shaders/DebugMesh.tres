@@ -1,0 +1,15 @@
+[gd_resource type="Shader" format=2]
+
+[resource]
+code = "shader_type spatial;
+render_mode unshaded, depth_draw_alpha_prepass;
+
+void fragment() {
+	ALBEDO *= COLOR.rgb;
+	ALPHA *= COLOR.a;
+}
+
+
+
+
+"

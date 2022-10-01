@@ -1,0 +1,53 @@
+[gd_resource type="Shader" format=2]
+
+[resource]
+code = "shader_type spatial;
+render_mode unshaded, skip_vertex_transform, depth_draw_alpha_prepass;
+
+varying vec2 size;
+
+void vertex() {
+	vec4 pa = vec4(VERTEX, 1.0);
+	vec4 pb = pa;
+	pb.xyz += NORMAL;
+	
+	vec2 scl = UV / VIEWPORT_SIZE;
+	
+	pa = PROJECTION_MATRIX * (INV_CAMERA_MATRIX * pa);
+	pb = PROJECTION_MATRIX * (INV_CAMERA_MATRIX * pb);
+	
+	vec4 off = pb - pa;
+	vec4 sy = off.x == 0.0 && off.y == 0.0 ? vec4(0.0, 1.0, 0.0, 0.0) : normalize(vec4(-off.y, off.x, 0.0, 0.0));
+	vec4 sx = vec4(sy.y, -sy.x, sy.z, sy.w);
+	vec4 s = (sx * scl.x + sy * scl.y);
+	
+	vec4 p = pa;
+	p += off * max(sign(UV.x), 0.0);
+	p += s;
+	
+	POSITION = p;
+	
+	float r = length(scl);
+	
+	size = vec2(length(off.xy) * 0.5 + r, r);
+	UV = UV / (abs(UV));
+}
+
+void fragment() {
+	vec2 p = UV * size;
+	float r = min(size.x, size.y);
+	vec2 b = size - r;
+	vec2 d = abs(p) - b;
+	float dst1 = min(max(d.x, d.y), 0.0);
+	float dst2 = length(max(d, 0.0));
+	float dst = (dst1 + dst2) - r;
+	
+	ALPHA = step(dst, 0.0);
+	ALBEDO *= COLOR.rgb;
+	ALPHA *= COLOR.a;
+}
+
+
+
+
+"
