@@ -2,20 +2,29 @@
 
 [resource]
 code = "shader_type spatial;
-render_mode unshaded, skip_vertex_transform, depth_draw_alpha_prepass;
+render_mode unshaded, depth_draw_alpha_prepass;
 
 varying vec2 size;
 
 void vertex() {
 	vec3 p = VERTEX;
 	
-	vec2 scl = UV;
+	vec2 scl = UV / VIEWPORT_SIZE;
+	scl.y *= VIEWPORT_SIZE.y / VIEWPORT_SIZE.x;
 	
 	p = (INV_CAMERA_MATRIX * vec4(p, 1.0)).xyz;
 	
+	if (PROJECTION_MATRIX[3][3] != 0.0) {
+		float h = abs(1.0 / (2.0 * PROJECTION_MATRIX[1][1]));
+		float sc = (h * 2.0); //consistent with Y-fov
+		scl *= sc;
+	} else {
+		scl *= -p.z;
+	}
+	
 	p.xy += scl;
 	
-	VERTEX = p;
+	POSITION = PROJECTION_MATRIX * vec4(p, 1.0);
 	
 	float r = length(scl);
 	

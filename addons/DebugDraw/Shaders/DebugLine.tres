@@ -15,10 +15,14 @@ void vertex() {
 	
 	vec4 vpa = (INV_CAMERA_MATRIX * vec4(wpa, 1.0));
 	vec4 vpb = (INV_CAMERA_MATRIX * vec4(wpb, 1.0));
-	vpa.xyz /= vpa.w;
-	vpb.xyz /= vpb.w;
-	vpa.w = 1.0;
-	vpb.w = 1.0;
+	
+	if (PROJECTION_MATRIX[3][3] != 0.0) {
+		float h = abs(1.0 / (2.0 * PROJECTION_MATRIX[1][1]));
+		float sc = (h * 2.0); //consistent with Y-fov
+		scl *= sc;
+	} else {
+		scl *= min(-vpa.z, -vpb.z);
+	}
 	
 	vec3 off = vpb.xyz - vpa.xyz;
 	vec3 sy = off.x == 0.0 && off.y == 0.0 ? vec3(0.0, 1.0, 0.0) : normalize(vec3(-off.y, off.x, 0.0));
@@ -27,8 +31,8 @@ void vertex() {
 	
 	vec4 p = vpa;
 	p.xyz += off * max(sign(UV.x), 0.0);
-	p = PROJECTION_MATRIX * p;
 	p.xyz += s;
+	p = PROJECTION_MATRIX * p;
 	
 	POSITION = p;
 	
