@@ -119,7 +119,24 @@ func add_line(point_a: Vector3, point_b: Vector3, color: Color, radius: float = 
 
 	var off: Vector3 = point_b - point_a
 	line_geo.set_normal(off)
+	line_geo.set_uv2(Vector2(0.0, 0.0))
 
+	line_geo.set_uv(Vector2(-1.0, -1.0) * radius)
+	line_geo.add_vertex(point_a)
+	line_geo.set_uv(Vector2(-1.0,  1.0) * radius)
+	line_geo.add_vertex(point_a)
+	line_geo.set_uv(Vector2( 1.0, -1.0) * radius)
+	line_geo.add_vertex(point_a)
+
+	line_geo.set_uv(Vector2( 1.0, -1.0) * radius)
+	line_geo.add_vertex(point_a)
+	line_geo.set_uv(Vector2(-1.0,  1.0) * radius)
+	line_geo.add_vertex(point_a)
+	line_geo.set_uv(Vector2( 1.0,  1.0) * radius)
+	line_geo.add_vertex(point_a)
+
+	line_geo.set_uv2(Vector2(1.0, 0.0))
+	
 	line_geo.set_uv(Vector2(-1.0, -1.0) * radius)
 	line_geo.add_vertex(point_a)
 	line_geo.set_uv(Vector2(-1.0,  1.0) * radius)

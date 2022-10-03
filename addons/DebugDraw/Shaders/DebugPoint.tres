@@ -9,22 +9,32 @@ varying vec2 size;
 void vertex() {
 	vec3 p = VERTEX;
 	
-	vec2 scl = UV / VIEWPORT_SIZE;
+	float x_asp = VIEWPORT_SIZE.x / VIEWPORT_SIZE.y;
+	float y_asp = VIEWPORT_SIZE.y / VIEWPORT_SIZE.x;
+	
+	vec2 scl = vec2(1.0) / VIEWPORT_SIZE;
 	scl.y *= VIEWPORT_SIZE.y / VIEWPORT_SIZE.x;
 	
-	p = (INV_CAMERA_MATRIX * vec4(p, 1.0)).xyz;
+	vec4 cp = vec4(p, 1.0);
 	
-	if (PROJECTION_MATRIX[3][3] != 0.0) {
-		float h = abs(1.0 / (2.0 * PROJECTION_MATRIX[1][1]));
-		float sc = (h * 2.0); //consistent with Y-fov
-		scl *= sc;
-	} else {
-		scl *= -p.z;
-	}
+	cp = PROJECTION_MATRIX * INV_CAMERA_MATRIX * cp;
+	cp.xyz /= cp.w;
+	cp.w = 1.0;
 	
-	p.xy += scl;
+	vec2 sx = vec2(1.0, 0.0);
+	sx.y *= y_asp;
+	sx = normalize(sx);
+	sx.x *= y_asp;
+	vec2 sy = vec2(-sx.y, sx.x);
+	sy.x *= y_asp;
+	sy.y *= x_asp;
 	
-	POSITION = PROJECTION_MATRIX * vec4(p, 1.0);
+	sx *= scl * UV.x;
+	sy *= scl * UV.y;
+	
+	cp.xy += (sx + sy);
+	
+	POSITION = cp;
 	
 	float r = length(scl);
 	
