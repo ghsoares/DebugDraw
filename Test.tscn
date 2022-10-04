@@ -23,5 +23,5 @@ fixed_size = true
 text = "B = Vector3(128, 0, 0)"
 
 [node name="MeshInstance" type="MeshInstance" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -20.5294 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -16 )
 mesh = SubResource( 1 )

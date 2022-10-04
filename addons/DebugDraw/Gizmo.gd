@@ -86,9 +86,9 @@ func _on_before_render() -> void:
 		point_geo.set_custom_aabb(aabb)
 		mesh_geo.set_custom_aabb(aabb)
 
-		line_geo.extra_cull_margin = 999
-		point_geo.extra_cull_margin = 999
-		mesh_geo.extra_cull_margin = 999
+		line_geo.extra_cull_margin = 99999
+		point_geo.extra_cull_margin = 99999
+		mesh_geo.extra_cull_margin = 99999
 
 		state = 0
 
@@ -118,37 +118,31 @@ func add_line(point_a: Vector3, point_b: Vector3, color: Color, radius: float = 
 	line_geo.set_color(color)
 
 	var off: Vector3 = point_b - point_a
+
+	var uv00: Vector2 = Vector2(-1.0, -1.0)
+	var uv01: Vector2 = Vector2( 1.0, -1.0)
+	var uv02: Vector2 = Vector2(-1.0,  1.0)
+	var uv03: Vector2 = Vector2( 1.0,  1.0)
+
+	line_geo.set_uv2(Vector2(radius, 0.0))
 	line_geo.set_normal(off)
-	line_geo.set_uv2(Vector2(0.0, 0.0))
 
-	line_geo.set_uv(Vector2(-1.0, -1.0) * radius * 0.5)
-	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2(-1.0,  1.0) * radius * 0.5)
-	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2( 1.0, -1.0) * radius * 0.5)
+	line_geo.set_uv(uv00)
 	line_geo.add_vertex(point_a)
 
-	line_geo.set_uv(Vector2( 1.0, -1.0) * radius * 0.5)
-	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2(-1.0,  1.0) * radius * 0.5)
-	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2( 1.0,  1.0) * radius * 0.5)
+	line_geo.set_uv(uv03)
 	line_geo.add_vertex(point_a)
 
-	line_geo.set_uv2(Vector2(1.0, 0.0))
-	
-	line_geo.set_uv(Vector2(-1.0, -1.0) * radius * 0.5)
-	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2(-1.0,  1.0) * radius * 0.5)
-	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2( 1.0, -1.0) * radius * 0.5)
+	line_geo.set_uv(uv02)
 	line_geo.add_vertex(point_a)
 
-	line_geo.set_uv(Vector2( 1.0, -1.0) * radius * 0.5)
+	line_geo.set_uv(uv03)
 	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2(-1.0,  1.0) * radius * 0.5)
+
+	line_geo.set_uv(uv00)
 	line_geo.add_vertex(point_a)
-	line_geo.set_uv(Vector2( 1.0,  1.0) * radius * 0.5)
+
+	line_geo.set_uv(uv01)
 	line_geo.add_vertex(point_a)
 
 	var line_aabb: AABB = AABB(

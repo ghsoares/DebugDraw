@@ -24,11 +24,13 @@ void vertex() {
 	vec3 wpa = VERTEX;
 	vec3 wpb = VERTEX + NORMAL;
 	
-	vec4 cpa = vec4(wpa, 1.0);
-	vec4 cpb = vec4(wpb, 1.0);
+	vec4 p0 = vec4(VERTEX, 1.0);
+	vec4 p1 = vec4(VERTEX + NORMAL, 1.0);
 	
-	cpa = INV_CAMERA_MATRIX * cpa;
-	cpb = INV_CAMERA_MATRIX * cpb;
+	float rad = UV2.x * 0.5;
+	
+	p0 = INV_CAMERA_MATRIX * p0;
+	p1 = INV_CAMERA_MATRIX * p1;
 	
 	vec4 left = vec4(
 		PROJECTION_MATRIX[0][3] + PROJECTION_MATRIX[0][0],
@@ -67,45 +69,48 @@ void vertex() {
 		PROJECTION_MATRIX[3][3] - PROJECTION_MATRIX[3][2]
 	);
 	
-	clip_line(cpa, cpb, left);
-	clip_line(cpa, cpb, right);
-	clip_line(cpa, cpb, top);
-	clip_line(cpa, cpb, bottom);
-	clip_line(cpa, cpb, near);
-	clip_line(cpa, cpb, far);
 	
-	cpa = PROJECTION_MATRIX * cpa;
-	cpb = PROJECTION_MATRIX * cpb;
+	clip_line(p0, p1, left);
+	clip_line(p0, p1, right);
+	clip_line(p0, p1, top);
+	clip_line(p0, p1, bottom);
+	clip_line(p0, p1, near);
+	clip_line(p0, p1, far);
 	
-	cpa.xyz /= cpa.w;
-	cpb.xyz /= cpb.w;
+	p0 = PROJECTION_MATRIX * p0;
+	p1 = PROJECTION_MATRIX * p1;
 	
-	cpa.w = 1.0;
-	cpb.w = 1.0;
+	p0.xyz /= p0.w;
+	p1.xyz /= p1.w;
 	
-	cpa.xy = (cpa.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
-	cpb.xy = (cpb.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	p0.w = 1.0;
+	p1.w = 1.0;
 	
-	vec3 off = cpb.xyz - cpa.xyz;
-	vec2 sx = normalize(off.xy);
+	p0.y = -p0.y;
+	p1.y = -p1.y;
+	p0.xy = (p0.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	p1.xy = (p1.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	
+	vec3 off = p1.xyz - p0.xyz;
+	vec2 sx = normalize(off.xy) * rad;
 	vec2 sy = vec2(-sx.y, sx.x);
 	
-	sx *= UV.x;
-	sy *= UV.y;
+	sx *= sign(UV.x);
+	sy *= sign(UV.y);
 	
 	float l = length(off.xy);
-	float r = length(sy);
 	
-	vec4 p = cpa;
+	vec4 p = p0;
 	p.xyz += off * max(sign(UV.x), 0.0);
 	
 	p.xy += (sx + sy);
 	
 	p.xy = (p.xy / VIEWPORT_SIZE) * 2.0 - 1.0;
+	p.y = -p.y;
 	
 	POSITION = p;
 	
-	size = vec2(l * 0.5 + r, r);
+	size = vec2(l * 0.5 + rad, rad);
 	UV = UV / (abs(UV));
 }
 
