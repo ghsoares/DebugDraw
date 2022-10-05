@@ -2,7 +2,7 @@
 
 [resource]
 code = "shader_type spatial;
-render_mode unshaded, depth_draw_alpha_prepass;
+render_mode unshaded;
 
 varying vec2 size;
 
@@ -21,9 +21,6 @@ void clip_line(inout vec4 a, inout vec4 b, vec4 plane) {
 }
 
 void vertex() {
-	vec3 wpa = VERTEX;
-	vec3 wpb = VERTEX + NORMAL;
-	
 	vec4 p0 = vec4(VERTEX, 1.0);
 	vec4 p1 = vec4(VERTEX + NORMAL, 1.0);
 	
@@ -69,7 +66,6 @@ void vertex() {
 		PROJECTION_MATRIX[3][3] - PROJECTION_MATRIX[3][2]
 	);
 	
-	
 	clip_line(p0, p1, left);
 	clip_line(p0, p1, right);
 	clip_line(p0, p1, top);
@@ -107,23 +103,28 @@ void vertex() {
 	
 	p.xy = (p.xy / VIEWPORT_SIZE) * 2.0 - 1.0;
 	p.y = -p.y;
+	//p.z = 0.0;
 	
 	POSITION = p;
 	
 	size = vec2(l * 0.5 + rad, rad);
-	UV = UV / (abs(UV));
 }
 
 void fragment() {
 	vec2 p = UV * size;
-	float r = min(size.x, size.y);
-	vec2 b = size - r;
-	vec2 d = abs(p) - b;
-	float dst1 = min(max(d.x, d.y), 0.0);
-	float dst2 = length(max(d, 0.0));
-	float dst = (dst1 + dst2) - r;
+	vec2 p0 = vec2(-(size.x - size.y), 0.0);
+	vec2 p1 = vec2(size.x - size.y, 0.0);
 	
-	ALPHA = -dst;
+	vec2 ba = p1 - p0;
+	vec2 ca = p - p0;
+	float t = dot(ca, ba) / dot(ba, ba);
+	t = clamp(t, 0.0, 1.0);
+	vec2 p2 = p0 + ba * t;
+	
+	vec2 off = p2 - p;
+	float d = sqrt(off.x * off.x + off.y * off.y) - size.y;
+	
+	ALPHA = -d;
 	ALBEDO *= COLOR.rgb;
 	ALPHA_SCISSOR = 0.0;
 }

@@ -2,58 +2,39 @@
 
 [resource]
 code = "shader_type spatial;
-render_mode unshaded, depth_draw_alpha_prepass;
+render_mode unshaded;
 
 varying vec2 size;
 
 void vertex() {
-	vec3 p = VERTEX;
+	vec4 p = vec4(VERTEX, 1.0);
 	
-	float x_asp = VIEWPORT_SIZE.x / VIEWPORT_SIZE.y;
-	float y_asp = VIEWPORT_SIZE.y / VIEWPORT_SIZE.x;
+	float rad = UV2.x * 0.5;
 	
-	vec2 scl = vec2(1.0) / VIEWPORT_SIZE;
-	scl.y *= VIEWPORT_SIZE.y / VIEWPORT_SIZE.x;
+	p = PROJECTION_MATRIX * INV_CAMERA_MATRIX * p;
+	p.xyz /= p.w;
+	p.w = 1.0;
 	
-	vec4 cp = vec4(p, 1.0);
+	p.y = -p.y;
+	p.xy = (p.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
 	
-	cp = PROJECTION_MATRIX * INV_CAMERA_MATRIX * cp;
-	cp.xyz /= cp.w;
-	cp.w = 1.0;
+	p.xy += UV * rad;
 	
-	vec2 sx = vec2(1.0, 0.0);
-	sx.y *= y_asp;
-	sx = normalize(sx);
-	sx.x *= y_asp;
-	vec2 sy = vec2(-sx.y, sx.x);
-	sy.x *= y_asp;
-	sy.y *= x_asp;
+	p.xy = (p.xy / VIEWPORT_SIZE) * 2.0 - 1.0;
+	p.y = -p.y;
 	
-	sx *= scl * UV.x;
-	sy *= scl * UV.y;
+	POSITION = p;
 	
-	cp.xy += (sx + sy);
-	
-	POSITION = cp;
-	
-	float r = length(scl);
-	
-	size = vec2(r);
-	UV = UV / abs(UV);
+	size = vec2(rad);
 }
 
 void fragment() {
 	vec2 p = UV * size;
-	float r = min(size.x, size.y);
-	vec2 b = size - r;
-	vec2 d = abs(p) - b;
-	float dst1 = min(max(d.x, d.y), 0.0);
-	float dst2 = length(max(d, 0.0));
-	float dst = (dst1 + dst2) - r;
+	float d = (p.x * p.x + p.y * p.y) - (size.y * size.y);
 	
-	ALPHA = step(dst, 0.0);
+	ALPHA = -d;
 	ALBEDO *= COLOR.rgb;
-	ALPHA *= COLOR.a;
+	ALPHA_SCISSOR = 0.0;
 }
 
 
