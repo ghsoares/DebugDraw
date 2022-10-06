@@ -22,6 +22,7 @@ void vertex() {
 	
 	p.xy = (p.xy / VIEWPORT_SIZE) * 2.0 - 1.0;
 	p.y = -p.y;
+	p.z = 0.0;
 	
 	POSITION = p;
 	

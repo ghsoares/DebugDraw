@@ -2,13 +2,11 @@
 
 [resource]
 code = "shader_type spatial;
-render_mode unshaded;
+render_mode unshaded, cull_disabled;
 
 varying vec2 size;
 
 void clip_line(inout vec4 a, inout vec4 b, int plane) {
-	/*float ad = a.z + a.w;
-	float bd = b.z + b.w;*/
 	float ad, bd;
 	switch (plane) {
 		case 0: {
@@ -37,56 +35,127 @@ void clip_line(inout vec4 a, inout vec4 b, int plane) {
 		} break;
 	}
 	
-	a = ad < 0.0 && bd < 0.0 ? vec4(0.0, 0.0, 2.0, 1.0) : a;
-	b = ad < 0.0 && bd < 0.0 ? vec4(0.0, 0.0, 2.0, 1.0) : b;
-	
 	float at = ad / (ad - bd);
 	float bt = bd / (bd - ad);
 	
-	a = ad < 0.0 ? a + (b - a) * at : a;
-	b = bd < 0.0 ? b + (a - b) * bt : b;
+	a = ad < 0.0 && bd < 0.0 ? vec4(0.0, 0.0, 2.0, 1.0) : a;
+	b = bd < 0.0 && ad < 0.0 ? vec4(0.0, 0.0, 2.0, 1.0) : b;
+	
+	a = ad < 0.0 && !(bd < 0.0) ? a + (b - a) * at : a;
+	b = bd < 0.0 && !(ad < 0.0) ? b + (a - b) * bt : b;
+}
+
+void clip_line_planes(inout vec4 a, inout vec4 b) {
+	clip_line(a, b, 0);
+	clip_line(a, b, 1);
+	clip_line(a, b, 2);
+	clip_line(a, b, 3);
+	clip_line(a, b, 4);
+	clip_line(a, b, 5);
+}
+
+void ndc_to_screen(inout vec4 p_v, vec2 p_size) {
+	p_v.y = -p_v.y;
+	p_v.xy = (p_v.xy * 0.5 + 0.5) * p_size;
+}
+
+void screen_to_ndc(inout vec4 p_v, vec2 p_size) {
+	p_v.xy = (p_v.xy / p_size) * 2.0 - 1.0;
+	p_v.y = -p_v.y;
+}
+
+vec4 compute_screen_pos(in vec4 v) {
+	vec4 o = v * 0.5;
+	o.xy = vec2(o.x, o.y) + o.w;
+	o.zw = v.zw;
+	return o / abs(o.w);
 }
 
 void vertex() {
-	vec4 p0 = vec4(VERTEX, 1.0);
-	vec4 p1 = vec4(VERTEX + NORMAL, 1.0);
+	vec4 wp0 = vec4(VERTEX - TANGENT, 1.0);
+	vec4 wp1 = vec4(VERTEX, 1.0);
+	vec4 wp2 = vec4(VERTEX + NORMAL, 1.0);
 	
 	float r0 = UV2.x * 0.5;
 	float r1 = UV2.y * 0.5;
 	float r = max(r0, r1);
 	
-	p0 = PROJECTION_MATRIX * INV_CAMERA_MATRIX * p0;
-	p1 = PROJECTION_MATRIX * INV_CAMERA_MATRIX * p1;
+	wp0 = PROJECTION_MATRIX * INV_CAMERA_MATRIX * wp0;
+	wp1 = PROJECTION_MATRIX * INV_CAMERA_MATRIX * wp1;
+	wp2 = PROJECTION_MATRIX * INV_CAMERA_MATRIX * wp2;
 	
-	clip_line(p0, p1, 0);
-	clip_line(p0, p1, 1);
-	clip_line(p0, p1, 2);
-	clip_line(p0, p1, 3);
-	clip_line(p0, p1, 4);
-	clip_line(p0, p1, 5);
+	vec4 p0 = wp0;
+	vec4 p1 = wp1;
+	vec4 p2 = wp1;
+	vec4 p3 = wp2;
 	
-	p0.xyz /= p0.w;
-	p1.xyz /= p1.w;
+	clip_line_planes(p0, p1);
+	clip_line_planes(p2, p3);
 	
-	p0.w = 1.0;
-	p1.w = 1.0;
+	p0 /= p0.w;
+	p1 /= p1.w;
+	p2 /= p2.w;
+	p3 /= p3.w;
 	
-	p0.y = -p0.y;
-	p1.y = -p1.y;
-	p0.xy = (p0.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
-	p1.xy = (p1.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	ndc_to_screen(p0, VIEWPORT_SIZE);
+	ndc_to_screen(p1, VIEWPORT_SIZE);
+	ndc_to_screen(p2, VIEWPORT_SIZE);
+	ndc_to_screen(p3, VIEWPORT_SIZE);
 	
-	vec3 off = p1.xyz - p0.xyz;
-	vec2 sx = normalize(off.xy) * r;
+	vec3 off0 = p1.xyz - p0.xyz;
+	vec3 off1 = p3.xyz - p2.xyz;
+	
+	off0 = p0.xyz == p1.xyz ? off1 : off0;
+	off1 = p3.xyz == p2.xyz ? off0 : off1;
+	
+	vec2 sx = UV.x < 0.0 ? normalize(off0.xy) : normalize(off1.xy);
+	sx *= r;
+	vec2 sy = vec2(-sx.y, sx.x);
+	
+	float l = UV.x < 0.0 ? length(off1.xyz) : length(off0.xyz);
+	
+	sx *= abs(UV.x) > 1.0 ? sign(UV.x) : 0.0;
+	sy *= sign(UV.y);
+	
+	vec4 p = UV.x < 0.0 ? p2 : p0;
+	p.xyz += UV.x > 0.0 ? off0 : vec3(0.0);
+	
+	p.xy += (sx + sy);
+	
+	screen_to_ndc(p, VIEWPORT_SIZE);
+	
+	POSITION = p;
+	UV = sign(UV);
+	
+	size = vec2(l * 0.5 + r, r);
+	
+	/*
+	
+	p00.y = -p00.y;
+	p01.y = -p01.y;
+	p10.y = -p10.y;
+	p11.y = -p11.y;
+	
+	p00.xy = (p00.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	p01.xy = (p01.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	p10.xy = (p10.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	p11.xy = (p11.xy * 0.5 + 0.5) * VIEWPORT_SIZE;
+	
+	vec3 off0 = p01.xyz - p00.xyz;
+	vec3 off1 = p11.xyz - p10.xyz;
+	vec3 off = off1 + off0;
+	vec2 sx = UV.x != 0.0 ? normalize(off.xy) : normalize(off0.xy);
+	sx *= r;
 	vec2 sy = vec2(-sx.y, sx.x);
 	
 	sx *= sign(UV.x);
 	sy *= sign(UV.y);
 	
-	float l = length(off.xy);
+	float l = UV.x == -1.0 ? length(off1) : length(off0);
 	
-	vec4 p = p0;
-	p.xyz += off * max(sign(UV.x), 0.0);
+	vec4 p = UV.x == -1.0 ? p01 : p00;
+	p.xyz += off0.xyz * max(sign(UV.x), 0.0);
+	//p.xyz += off1.xyz * max(sign(UV.x), 0.0);
 	
 	p.xy += (sx + sy);
 	
@@ -95,7 +164,7 @@ void vertex() {
 	
 	POSITION = p;
 	
-	size = vec2(l * 0.5 + r, r);
+	size = vec2(l * 0.5 + r, r);*/
 }
 
 void fragment() {

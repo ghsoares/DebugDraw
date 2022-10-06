@@ -88,9 +88,9 @@ func _on_before_render() -> void:
 		point_geo.end()
 		mesh_geo.end()
 
-		line_geo.set_custom_aabb(aabb)
-		point_geo.set_custom_aabb(aabb)
-		mesh_geo.set_custom_aabb(aabb)
+		# line_geo.set_custom_aabb(aabb)
+		# point_geo.set_custom_aabb(aabb)
+		# mesh_geo.set_custom_aabb(aabb)
 
 		line_geo.extra_cull_margin = 99999
 		point_geo.extra_cull_margin = 99999
@@ -106,6 +106,10 @@ func _on_after_render() -> void:
 		line_geo.clear()
 		point_geo.clear()
 		mesh_geo.clear()
+
+		line_geo.set_custom_aabb(AABB())
+		point_geo.set_custom_aabb(AABB())
+		mesh_geo.set_custom_aabb(AABB())
 
 		# Start drawing
 		line_geo.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -162,31 +166,32 @@ func add_line(
 	var off: Vector3 = point_b - point_a
 
 	line_geo.set_uv2(Vector2(radius_a, radius_b))
+	line_geo.set_tangent(Plane(off, 0.0))
 	line_geo.set_normal(off)
 	
-	line_geo.set_uv(Vector2(-1.0, -1.0))
+	line_geo.set_uv(Vector2(-2.0, -1.0))
 	line_geo.set_color(color_a)
 	line_geo.add_vertex(point_a)
 
-	line_geo.set_uv(Vector2( 1.0,  1.0))
+	line_geo.set_uv(Vector2( 2.0,  1.0))
 	line_geo.set_color(color_b)
-	line_geo.add_vertex(point_a)
+	line_geo.add_vertex(point_b)
 
-	line_geo.set_uv(Vector2(-1.0,  1.0))
+	line_geo.set_uv(Vector2(-2.0,  1.0))
 	line_geo.set_color(color_a)
 	line_geo.add_vertex(point_a)
 
-	line_geo.set_uv(Vector2( 1.0,  1.0))
+	line_geo.set_uv(Vector2( 2.0,  1.0))
 	line_geo.set_color(color_b)
-	line_geo.add_vertex(point_a)
+	line_geo.add_vertex(point_b)
 
-	line_geo.set_uv(Vector2(-1.0, -1.0))
+	line_geo.set_uv(Vector2(-2.0, -1.0))
 	line_geo.set_color(color_a)
 	line_geo.add_vertex(point_a)
 
-	line_geo.set_uv(Vector2( 1.0, -1.0))
+	line_geo.set_uv(Vector2( 2.0, -1.0))
 	line_geo.set_color(color_b)
-	line_geo.add_vertex(point_a)
+	line_geo.add_vertex(point_b)
 
 	var a: Vector3 = point_a - Vector3.ONE * radius_a
 	var b: Vector3 = point_b + Vector3.ONE * radius_b
